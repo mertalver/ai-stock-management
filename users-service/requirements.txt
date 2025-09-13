@@ -1,0 +1,7 @@
+Flask
+google-generativeai
+requests
+python-dotenv
+PyJWT
+Werkzeug
+gunicorn 

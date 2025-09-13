@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilim - Stok Yönetim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        /* Standart Stiller */
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #fff;
+            box-shadow: 0 0 1rem rgba(0,0,0,.05);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        /* Dark Mode Kapsamlı Stiller */
+        [data-bs-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar {
+            background-color: #212529;
+            box-shadow: 0 0 1rem rgba(255,255,255,.05);
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .link-dark {
+            color: #dee2e6 !important;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #343a40;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover,
+        [data-bs-theme="dark"] .dropdown-item:focus {
+            background-color: #495057;
+        }
+        [data-bs-theme="dark"] .nav-link.active {
+            background-color: #0d6efd;
+        }
+        [data-bs-theme="dark"] .form-control {
+            background-color: #343a40;
+            color: #fff;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .form-control:focus {
+             background-color: #343a40;
+            color: #fff;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column p-3">
+        <a href="{{ url_for('dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <i class="bi bi-box-seam-fill me-2 fs-4"></i>
+            <span class="fs-4">Stok Yönetim</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link link-dark">
+                    <i class="bi bi-speedometer2 me-2"></i> Kontrol Paneli
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('llm_add_product') }}" class="nav-link link-dark">
+                    <i class="bi bi-robot me-2"></i> LLM ile Ürün Ekle
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('user_reports') }}" class="nav-link link-dark">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2"></i>
+                <strong>{{ session.username }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow">
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}">Ayarlar</a></li>
+                <li><a class="dropdown-item active" href="{{ url_for('profile') }}">Profil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Profil Ayarları</h1>
+        </div>
+        <div id="alert-placeholder"></div>
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Profil Bilgileri</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="profile-form">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Kullanıcı Adı</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-posta Adresi</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Şifre Değiştir</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="password-form">
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Mevcut Şifre</label>
+                                <input type="password" class="form-control" id="current_password" placeholder="Değiştirmek için doldurun">
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">Yeni Şifre</label>
+                                <input type="password" class="form-control" id="new_password" placeholder="Yeni şifrenizi girin">
+                            </div>
+                             <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Yeni Şifre (Tekrar)</label>
+                                <input type="password" class="form-control" id="confirm_password" placeholder="Yeni şifrenizi tekrar girin">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Şifreyi Güncelle</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Hesap Güvenliği</h5>
+                        <p class="card-text">
+                            Hesap güvenliğinizi artırmak için güçlü ve tahmin edilmesi zor bir şifre kullanmanızı öneririz. Şifreniz en az 8 karakter uzunluğunda olmalı ve harf, rakam ve sembol içermelidir.
+                        </p>
+                        <h5 class="card-title mt-4">Veri Gizliliği</h5>
+                        <p class="card-text">
+                            Kullanıcı adı ve e-posta adresiniz diğer kullanıcılarla paylaşılmaz. Profil bilgileriniz sadece sizin tarafınızdan görülebilir ve düzenlenebilir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const alertPlaceholder = document.getElementById('alert-placeholder');
+        const profileForm = document.getElementById('profile-form');
+        const passwordForm = document.getElementById('password-form');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+
+        const showAlert = (message, type = 'success') => {
+            const wrapper = document.createElement('div')
+            wrapper.innerHTML = [
+                `<div class="alert alert-${type} alert-dismissible" role="alert">`,
+                `   <div>${message}</div>`,
+                '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                '</div>'
+            ].join('')
+            alertPlaceholder.innerHTML = ''; // Önceki uyarıları temizle
+            alertPlaceholder.append(wrapper)
+
+            setTimeout(() => {
+                wrapper.remove();
+            }, 5000);
+        }
+
+        // Load profile data
+        const fetchProfile = () => {
+            fetch('/api/profile')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAlert(data.error, 'danger');
+                    } else {
+                        usernameInput.value = data.username;
+                        emailInput.value = data.email;
+                    }
+                })
+                .catch(err => showAlert('Profil bilgileri yüklenirken bir hata oluştu.', 'danger'));
+        };
+        
+        // Handle profile update (without password)
+        profileForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Güncelleniyor...';
+
+            const payload = {
+                username: usernameInput.value,
+                email: emailInput.value
+            };
+
+            fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message);
+                    // Update username in sidebar
+                    const sidebarUsername = document.querySelector('.sidebar .dropdown strong');
+                    if(sidebarUsername) sidebarUsername.textContent = payload.username;
+                } else {
+                    showAlert(data.error || 'Bir hata oluştu.', 'danger');
+                }
+            })
+            .catch(err => showAlert('Profil güncellenirken bir hata oluştu.', 'danger'))
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Bilgileri Güncelle';
+            });
+        });
+
+        // Handle password update
+        passwordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitButton = this.querySelector('button[type="submit"]');
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (!currentPassword || !newPassword) {
+                showAlert('Şifreyi değiştirmek için mevcut ve yeni şifre alanları doldurulmalıdır.', 'warning');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showAlert('Yeni şifreler uyuşmuyor.', 'danger');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Güncelleniyor...';
+            
+            // For password updates, we must also send the current username/email
+            const payload = {
+                username: usernameInput.value,
+                email: emailInput.value,
+                current_password: currentPassword,
+                new_password: newPassword
+            };
+
+            fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message);
+                    passwordForm.reset(); // Clear password fields
+                } else {
+                    showAlert(data.error || 'Bir hata oluştu.', 'danger');
+                }
+            })
+            .catch(err => showAlert('Şifre güncellenirken bir hata oluştu.', 'danger'))
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Şifreyi Güncelle';
+            });
+        });
+        
+        // Initial Load
+        fetchProfile();
+    });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontrol Paneli - Stok Yönetim Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+                body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #fff;
+            box-shadow: 0 0 1rem rgba(0,0,0,.05);
+            transition: background-color 0.3s, box-shadow 0.3s;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            margin-left: 280px;
+            overflow-y: auto;
+        }
+        .chart-container {
+            height: 350px;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Dark Mode Kapsamlı Stiller */
+        [data-bs-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar {
+            background-color: #212529;
+            box-shadow: 0 0 1rem rgba(255,255,255,.05);
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .link-dark {
+            color: #dee2e6 !important;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #343a40;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover,
+        [data-bs-theme="dark"] .dropdown-item:focus {
+            background-color: #495057;
+        }
+        [data-bs-theme="dark"] .table {
+            color: #dee2e6;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+            color: #fff;
+            background-color: #343a40;
+        }
+        [data-bs-theme="dark"] .nav-link.active {
+            background-color: #0d6efd;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #343a40;
+            color: #fff;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+             background-color: #343a40;
+            color: #fff;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        [data-bs-theme="dark"] .chart-container {
+            filter: invert(1) hue-rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column p-3">
+        <a href="{{ url_for('dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <i class="bi bi-box-seam-fill me-2 fs-4"></i>
+            <span class="fs-4">Stok Yönetim</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link active" aria-current="page" class="nav-link link-dark">
+                    <i class="bi bi-speedometer2 me-2"></i> Kontrol Paneli
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('llm_add_product') }}" class="nav-link link-dark">
+                    <i class="bi bi-robot me-2"></i> LLM ile Ürün Ekle
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('user_reports') }}" class="nav-link link-dark">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2"></i>
+                <strong>{{ session.username }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow">
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}">Ayarlar</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Kontrol Paneli</h1>
+                </div>
+
+                <!-- Stat Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card text-bg-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">Toplam Ürün Çeşidi</h5>
+                                <p class="card-text fs-2" id="total-products">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">Kritik Seviyedeki Ürünler</h5>
+                                <p class="card-text fs-2" id="critical-products">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-bg-success">
+                            <div class="card-body">
+                                <h5 class="card-title">Toplam Stok Miktarı</h5>
+                                <p class="card-text fs-2" id="total-stock">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Ürünlerim</h5>
+                        <div>
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#importModal">
+                                <i class="bi bi-upload"></i> İçe Aktar
+                            </button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openProductModal()">
+                                <i class="bi bi-plus-circle"></i> Yeni Ürün Ekle
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                         <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Ürün Adı</th>
+                                        <th>Stok</th>
+                                        <th>Kritik Seviye</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-table-body">
+                                    <!-- Products will be loaded here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle">Yeni Ürün Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="mb-3">
+                            <label for="productName" class="form-label">Ürün Adı</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productStock" class="form-label">Stok Miktarı</label>
+                            <input type="number" class="form-control" id="productStock" required min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="productCritical" class="form-label">Kritik Stok Seviyesi</label>
+                            <input type="number" class="form-control" id="productCritical" required min="0">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProduct()">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Stok Verisini İçe Aktar (CSV)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">CSV Dosya Formatı</h6>
+                            <p>Lütfen aşağıdaki formatta bir CSV dosyası hazırlayın. İlk satır başlık olarak kabul edilecek ve atlanacaktır.</p>
+                            <code>urun_adi,stok_degisimi</code><br>
+                            <code>Laptop,10</code><br>
+                            <code>Klavye,-5</code><br>
+                            <hr>
+                            <p class="mb-0"><b>Not:</b> Stok değişimi pozitif (ekleme) veya negatif (azaltma) bir sayı olabilir. Eğer ürün adı sistemde mevcut değilse, yeni bir ürün olarak oluşturulacaktır.</p>
+                    </div>
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">CSV Dosyası Seçin</label>
+                            <input class="form-control" type="file" id="csvFile" name="file" accept=".csv" required>
+                    </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" onclick="importStock()">Yükle ve İşle</button>
+                </div>
+                </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+        const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+        const productForm = document.getElementById('productForm');
+        let productsCache = [];
+
+        function showAlert(message, type = 'success') {
+            const alertPlaceholder = document.createElement('div');
+            alertPlaceholder.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert" style="position:fixed;top:20px;right:20px;z-index:1055;">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            document.body.append(alertPlaceholder);
+            setTimeout(() => alertPlaceholder.remove(), 5000);
+        }
+
+        function renderTable(products) {
+            productsCache = products;
+            const tableBody = document.getElementById('product-table-body');
+            tableBody.innerHTML = '';
+            let totalStock = 0;
+            let criticalCount = 0;
+
+            if (products.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Henüz ürün eklemediniz.</td></tr>';
+            }
+
+            products.forEach(p => {
+                totalStock += p.stock;
+                if (p.is_critical) criticalCount++;
+
+                const row = `
+                    <tr id="product-${p.id}">
+                        <td>${p.id}</td>
+                        <td>${p.name}</td>
+                        <td>
+                            <div class="stock-control">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="adjustStock(${p.id}, -1)">-</button>
+                                <span class="fw-bold mx-2">${p.stock}</span>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="adjustStock(${p.id}, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>${p.critical_level}</td>
+                        <td>
+                            <span class="badge ${p.is_critical ? 'text-bg-danger' : 'text-bg-success'}">
+                                ${p.is_critical ? 'Kritik Seviye' : 'Yeterli'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openProductModal(${p.id}, '${p.name}', ${p.stock}, ${p.critical_level})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('total-products').textContent = products.length;
+            document.getElementById('critical-products').textContent = criticalCount;
+            document.getElementById('total-stock').textContent = totalStock;
+        }
+
+        function adjustStock(id, amount) {
+            const product = productsCache.find(p => p.id === id);
+            if (!product) return;
+
+            const newStock = product.stock + amount;
+            if (newStock < 0) {
+                showAlert('Stok miktarı 0\'dan az olamaz.', 'warning');
+                return;
+            }
+
+            fetch(`/api/update-product/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stock: newStock }),
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('Stok güncellendi.', 'success');
+                    fetchProducts();
+                } else {
+                    showAlert(`Hata: ${result.error}`, 'danger');
+                }
+            })
+            .catch(err => showAlert(`Bir hata oluştu: ${err}`, 'danger'));
+        }
+
+        function fetchProducts() {
+            fetch('/api/my-products')
+                .then(res => res.json())
+                .then(data => renderTable(data))
+                .catch(err => console.error('Error fetching products:', err));
+        }
+
+        function openProductModal(id = null, name = '', stock = 0, critical = 5) {
+            productForm.reset();
+            document.getElementById('productId').value = id;
+            document.getElementById('productModalTitle').textContent = id ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle';
+            document.getElementById('productName').value = name;
+            document.getElementById('productStock').value = stock;
+            document.getElementById('productCritical').value = critical;
+            productModal.show();
+        }
+
+        function saveProduct() {
+            const id = document.getElementById('productId').value;
+            const data = {
+                name: document.getElementById('productName').value,
+                stock: parseInt(document.getElementById('productStock').value),
+                critical_level: parseInt(document.getElementById('productCritical').value),
+            };
+
+            if (!data.name || isNaN(data.stock) || isNaN(data.critical_level)) {
+                showAlert('Lütfen tüm alanları doğru bir şekilde doldurun.', 'warning');
+                return;
+            }
+
+            const url = id ? `/api/update-product/${id}` : '/api/add-product';
+            const method = id ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    productModal.hide();
+                    fetchProducts();
+                } else {
+                    showAlert(`Hata: ${result.error}`, 'danger');
+                }
+            })
+            .catch(err => showAlert(`Bir hata oluştu: ${err}`, 'danger'));
+        }
+        
+        function deleteProduct(id) {
+            if (!confirm(`Ürünü silmek istediğinizden emin misiniz? (ID: ${id})`)) return;
+
+            fetch(`/api/delete-product/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    fetchProducts();
+                } else {
+                    showAlert(`Hata: ${result.error}`, 'danger');
+                }
+            })
+            .catch(err => showAlert(`Bir hata oluştu: ${err}`, 'danger'));
+        }
+
+        function importStock() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showAlert('Lütfen bir dosya seçin.', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/import-stock', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    importModal.hide();
+                    fetchProducts(); // Refresh product list
+                } else {
+                    showAlert(`Hata: ${result.error}`, 'danger');
+                }
+            })
+            .catch(err => showAlert(`İçe aktarma sırasında bir hata oluştu: ${err}`, 'danger'));
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchProducts);
+    </script>
+</body>
+</html> 

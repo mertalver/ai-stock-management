@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetim Raporları - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; transition: color .15s ease-in-out, background-color .15s ease-in-out; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] .main-content {
+            background-color: #1a1a1a !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary { color: #adb5bd; border-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary:hover { color: #fff; background-color: #495057; }
+        [data-bs-theme="dark"] .border-bottom { border-color: rgba(255, 255, 255, 0.125) !important; }
+
+        .stat-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-card i {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .toast-container {
+            z-index: 1080;
+        }
+        .quick-link-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s;
+            border: 0;
+        }
+        .quick-link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        .quick-link-card .card-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .quick-link-card .card-icon {
+            font-size: 2.5rem;
+            color: #0d6efd;
+            transition: color 0.2s;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-icon {
+            color: #3b8bfd;
+        }
+        .quick-link-card .card-text {
+            color: #6c757d;
+        }
+        thead.table-theme-aware {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+        [data-bs-theme="dark"] thead.table-theme-aware {
+            background-color: #343a40;
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-text { color: #adb5bd; }
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .card { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .chart-container { filter: invert(1) hue-rotate(180deg); }   
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="{{ url_for('admin_panel') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none admin-link">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item mb-1"><a href="{{ url_for('admin_panel') }}" class="nav-link"><i class="bi bi-speedometer2"></i> Panel</a></li>
+            <li class="nav-item mb-1"><a href="{{ url_for('admin_reports') }}" class="nav-link active"><i class="bi bi-bar-chart-line-fill"></i> Raporlar</a></li>
+            <li class="nav-item mb-1"><a href="{{ url_for('maintenance_dashboard') }}" class="nav-link"><i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım</a></li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <h1 class="h2 border-bottom pb-2 mb-3">Genel Raporlar</h1>
+        
+        <!-- Summary Cards -->
+        <div class="row mb-4" id="summary-cards">
+            <!-- Summary data will be loaded here -->
+                    </div>
+                    
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">Günlük Aktivite Trendi (Son 7 Gün)</div>
+                    <div class="card-body"><div class="chart-container"><canvas id="dailyTrendChart"></canvas></div></div>
+                </div>
+                    </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">Hareket Tipi Dağılımı</div>
+                    <div class="card-body"><div class="chart-container"><canvas id="movementDistributionChart"></canvas></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+        <!-- Filters and Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Stok Hareketleri</h5>
+                        </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3"><input type="date" id="start-date" class="form-control"></div>
+                    <div class="col-md-3"><input type="date" id="end-date" class="form-control"></div>
+                    <div class="col-md-2">
+                        <select id="movement-type" class="form-select">
+                            <option value="">Tüm Tipler</option>
+                            <option value="ADD">Ekleme (Yeni)</option>
+                            <option value="INCREASE">Artış</option>
+                            <option value="DECREASE">Azalış</option>
+                            <option value="DELETE">Silme</option>
+                            </select>
+                    </div>
+                    <div class="col-md-3"><input type="text" id="username-filter" class="form-control" placeholder="Kullanıcı adına göre filtrele..."></div>
+                    <div class="col-md-1 d-grid"><button id="filter-btn" class="btn btn-primary">Filtrele</button></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="table-theme-aware">
+                            <tr>
+                                <th>ID</th><th>Kullanıcı</th><th>Ürün</th><th>Tip</th><th>Değişim</th><th>Önceki</th><th>Sonraki</th><th>Notlar</th><th>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movements-table-body"></tbody>
+                    </table>
+                </div>
+                    </div>
+                </div>
+        </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let dailyTrendChart, movementDistributionChart;
+
+        const createChart = (ctx, type, data, options) => new Chart(ctx, { type, data, options });
+
+        const fetchSummary = async () => {
+            try {
+                const res = await fetch('/api/reports/admin-summary');
+                const data = await res.json();
+                
+                document.getElementById('summary-cards').innerHTML = `
+                    <div class="col-md-3"><div class="card bg-primary text-white"><div class="card-body"><h5>Toplam Kullanıcı</h5><p class="fs-2 mb-0">${data.total_users}</p></div></div></div>
+                    <div class="col-md-3"><div class="card bg-info text-white"><div class="card-body"><h5>Toplam Ürün</h5><p class="fs-2 mb-0">${data.total_products}</p></div></div></div>
+                    <div class="col-md-3"><div class="card bg-success text-white"><div class="card-body"><h5>Toplam Hareket</h5><p class="fs-2 mb-0">${data.total_movements}</p></div></div></div>
+                `;
+
+                if (dailyTrendChart) dailyTrendChart.destroy();
+                dailyTrendChart = createChart(document.getElementById('dailyTrendChart'), 'line', {
+                    labels: data.daily_trend.map(d => d.date),
+                    datasets: [{ label: 'Günlük Hareket Sayısı', data: data.daily_trend.map(d => d.count), tension: 0.3, fill: true }]
+                });
+
+                if (movementDistributionChart) movementDistributionChart.destroy();
+                movementDistributionChart = createChart(document.getElementById('movementDistributionChart'), 'doughnut', {
+                    labels: data.movement_distribution.map(d => d.movement_type),
+                    datasets: [{ label: 'Hareket Dağılımı', data: data.movement_distribution.map(d => d.count) }]
+                });
+            } catch (e) { console.error("Özet verileri alınamadı:", e); }
+        };
+
+        const fetchMovements = async () => {
+            const params = new URLSearchParams({
+                start_date: document.getElementById('start-date').value,
+                end_date: document.getElementById('end-date').value,
+                movement_type: document.getElementById('movement-type').value,
+                username: document.getElementById('username-filter').value,
+            });
+            const tableBody = document.getElementById('movements-table-body');
+            tableBody.innerHTML = '<tr><td colspan="9" class="text-center">Yükleniyor...</td></tr>';
+            
+            try {
+                const res = await fetch(`/api/reports/admin-stock-movements?${params}`);
+                const data = await res.json();
+                tableBody.innerHTML = '';
+                if(data.movements.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="9" class="text-center">Filtreye uygun kayıt bulunamadı.</td></tr>';
+                    return;
+                }
+                data.movements.forEach(m => {
+                    const row = `
+                        <tr>
+                            <td>${m.id}</td>
+                            <td>${m.username}</td>
+                            <td>${m.current_product_name || m.product_name}</td>
+                            <td><span class="badge bg-secondary">${m.movement_type}</span></td>
+                            <td class="fw-bold ${m.quantity_change > 0 ? 'text-success' : 'text-danger'}">${m.quantity_change > 0 ? '+' : ''}${m.quantity_change}</td>
+                            <td>${m.quantity_before}</td>
+                            <td>${m.quantity_after}</td>
+                            <td>${m.notes || ''}</td>
+                            <td>${new Date(m.timestamp).toLocaleString('tr-TR')}</td>
+                        </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            } catch (e) {
+                console.error("Hareket verileri alınamadı:", e);
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Veri yüklenirken bir hata oluştu.</td></tr>';
+            }
+        };
+
+        document.getElementById('filter-btn').addEventListener('click', fetchMovements);
+        fetchSummary();
+        fetchMovements();
+        });
+    </script>
+</body>
+</html> 

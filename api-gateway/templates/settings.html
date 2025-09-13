@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uygulama Ayarları - Stok Yönetim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        /* Standart Stiller */
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #fff;
+            box-shadow: 0 0 1rem rgba(0,0,0,.05);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        /* Dark Mode Kapsamlı Stiller */
+        [data-bs-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar {
+            background-color: #212529;
+            box-shadow: 0 0 1rem rgba(255,255,255,.05);
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .link-dark {
+            color: #dee2e6 !important;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #343a40;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover,
+        [data-bs-theme="dark"] .dropdown-item:focus {
+            background-color: #495057;
+        }
+        [data-bs-theme="dark"] .nav-link.active {
+            background-color: #0d6efd;
+        }
+        [data-bs-theme="dark"] .form-check-input:not(:checked) {
+            background-color: #495057;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column p-3">
+        <a href="{{ url_for('dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <i class="bi bi-box-seam-fill me-2 fs-4"></i>
+            <span class="fs-4">Stok Yönetim</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link link-dark">
+                    <i class="bi bi-speedometer2 me-2"></i> Kontrol Paneli
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('llm_add_product') }}" class="nav-link link-dark">
+                    <i class="bi bi-robot me-2"></i> LLM ile Ürün Ekle
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('user_reports') }}" class="nav-link link-dark">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2"></i>
+                <strong>{{ session.username }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow">
+                <li><a class="dropdown-item active" href="{{ url_for('settings') }}">Ayarlar</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Uygulama Ayarları</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Görünüm Ayarları</h5>
+                    </div>
+                    <div class="card-body">
+                         <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="darkModeSwitch">
+                            <label class="form-check-label" for="darkModeSwitch">Karanlık Mod</label>
+                        </div>
+                        <small class="text-muted">Arayüzü açık veya koyu tema arasında değiştirin.</small>
+                    </div>
+                </div>
+
+                 <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Bildirim Ayarları</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Bu özellik yakında aktif olacaktır. Hangi durumlarda e-posta veya uygulama içi bildirim almak istediğinizi buradan seçebileceksiniz.</p>
+                        <form>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="notifyCriticalStock" disabled>
+                                <label class="form-check-label" for="notifyCriticalStock">Kritik stok seviyesi uyarıları</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="notifySystemUpdates" disabled>
+                                <label class="form-check-label" for="notifySystemUpdates">Sistem güncellemeleri ve duyurular</label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeSwitch = document.getElementById('darkModeSwitch');
+            const htmlElement = document.documentElement;
+
+            // Sayfa yüklendiğinde temayı uygula
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    darkModeSwitch.checked = true;
+                } else {
+                    htmlElement.removeAttribute('data-bs-theme');
+                    darkModeSwitch.checked = false;
+                }
+            };
+
+            // localStorage'dan temayı al
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            // Tema değiştirme olayını dinle
+            darkModeSwitch.addEventListener('change', () => {
+                const newTheme = darkModeSwitch.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raporlar - Stok Yönetim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        /* Standart Stiller */
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #fff;
+            box-shadow: 0 0 1rem rgba(0,0,0,.05);
+            transition: background-color 0.3s, box-shadow 0.3s;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            margin-left: 280px;
+            overflow-y: auto;
+        }
+        .chart-container {
+            height: 350px;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Dark Mode Kapsamlı Stiller */
+        [data-bs-theme="dark"] body {
+            background-color: #1a1a1a;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar {
+            background-color: #212529;
+            box-shadow: 0 0 1rem rgba(255,255,255,.05);
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .link-dark {
+            color: #dee2e6 !important;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #343a40;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover,
+        [data-bs-theme="dark"] .dropdown-item:focus {
+            background-color: #495057;
+        }
+        [data-bs-theme="dark"] .table {
+            color: #dee2e6;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+            color: #fff;
+            background-color: #343a40;
+        }
+        [data-bs-theme="dark"] .nav-link.active {
+            background-color: #0d6efd;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #343a40;
+            color: #fff;
+            border-color: #495057;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+             background-color: #343a40;
+            color: #fff;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        [data-bs-theme="dark"] .chart-container {
+            filter: invert(1) hue-rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column p-3">
+        <a href="{{ url_for('dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <i class="bi bi-box-seam-fill me-2 fs-4"></i>
+            <span class="fs-4">Stok Yönetim</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link link-dark">
+                    <i class="bi bi-speedometer2 me-2"></i> Kontrol Paneli
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('llm_add_product') }}" class="nav-link link-dark">
+                    <i class="bi bi-robot me-2"></i> LLM ile Ürün Ekle
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('user_reports') }}" class="nav-link active" aria-current="page">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Raporlar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2"></i>
+                <strong>{{ session.username }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow">
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}">Ayarlar</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Raporlar ve Analiz</h1>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4" id="summary-cards">
+            <!-- Summary data will be loaded here -->
+        </div>
+
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-7">
+                <div class="card h-100">
+                    <div class="card-header">Aylık Stok Hareket Trendi</div>
+                    <div class="card-body chart-container">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="card h-100">
+                    <div class="card-header">En Çok Hareket Gören Ürünler</div>
+                    <div class="card-body chart-container">
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movements Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Stok Hareketleri</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4"><input type="date" id="start_date" class="form-control"></div>
+                    <div class="col-md-4"><input type="date" id="end_date" class="form-control"></div>
+                    <div class="col-md-3">
+                        <select id="movement_type" class="form-select">
+                            <option value="">Tüm Tipler</option>
+                            <option value="ADD">Ekleme</option>
+                            <option value="INCREASE">Artış</option>
+                            <option value="DECREASE">Azalış</option>
+                            <option value="DELETE">Silme</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button class="btn btn-primary" id="filter-btn"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ürün Adı</th>
+                                <th>Tipi</th>
+                                <th>Değişim</th>
+                                <th>Önceki Stok</th>
+                                <th>Sonraki Stok</th>
+                                <th>Notlar</th>
+                                <th>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movements-table-body">
+                           <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart instances
+        let monthlyTrendChart, topProductsChart;
+
+        const fetchSummary = () => {
+            fetch('/api/reports/summary')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('summary-cards').innerHTML = `
+                        <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><h5 class="card-title">Toplam Ürün</h5><p class="card-text fs-3">${data.total_products || 0}</p></div></div></div>
+                        <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><h5 class="card-title">Kritik Stok</h5><p class="card-text fs-3 text-danger">${data.critical_products || 0}</p></div></div></div>
+                        <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><h5 class="card-title">Toplam Stok</h5><p class="card-text fs-3">${data.total_stock || 0}</p></div></div></div>
+                        <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><h5 class="card-title">Son 30 Gün Hareket</h5><p class="card-text fs-3">${data.recent_movements || 0}</p></div></div></div>
+                    `;
+                    renderMonthlyTrendChart(data.monthly_trend || []);
+                    renderTopProductsChart(data.top_products || []);
+                });
+        };
+
+        const fetchMovements = () => {
+            const params = new URLSearchParams({
+                start_date: document.getElementById('start_date').value,
+                end_date: document.getElementById('end_date').value,
+                movement_type: document.getElementById('movement_type').value,
+            });
+            
+            const tableBody = document.getElementById('movements-table-body');
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Yükleniyor...</td></tr>';
+
+            fetch(`/api/reports/stock-movements?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    tableBody.innerHTML = '';
+                    if(data.movements.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Filtreye uygun kayıt bulunamadı.</td></tr>';
+                        return;
+                    }
+                    data.movements.forEach(m => {
+                        const row = `
+                            <tr>
+                                <td>${m.id}</td>
+                                <td>${m.product_name}</td>
+                                <td><span class="badge text-bg-info">${m.movement_type}</span></td>
+                                <td class="${m.quantity_change > 0 ? 'text-success' : 'text-danger'} fw-bold">${m.quantity_change}</td>
+                                <td>${m.quantity_before}</td>
+                                <td>${m.quantity_after}</td>
+                                <td>${m.notes || '-'}</td>
+                                <td>${new Date(m.timestamp).toLocaleString('tr-TR')}</td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                });
+        };
+
+        const renderMonthlyTrendChart = (data) => {
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            const labels = data.map(d => d.month).reverse();
+            const counts = data.map(d => d.count).reverse();
+            if(monthlyTrendChart) monthlyTrendChart.destroy();
+            monthlyTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label: 'Hareket Sayısı', data: counts, tension: 0.1, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        };
+
+        const renderTopProductsChart = (data) => {
+            const ctx = document.getElementById('topProductsChart').getContext('2d');
+            const labels = data.map(d => d.product_name);
+            const counts = data.map(d => d.movement_count);
+             if(topProductsChart) topProductsChart.destroy();
+            topProductsChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Hareket Sayısı', data: counts, backgroundColor: 'rgba(54, 162, 235, 0.6)' }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+            });
+        };
+
+        document.getElementById('filter-btn').addEventListener('click', fetchMovements);
+        
+        // Initial load
+        fetchSummary();
+        fetchMovements();
+    });
+    </script>
+</body>
+</html> 

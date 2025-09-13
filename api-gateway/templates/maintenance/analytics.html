@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakım Paneli - Analitik</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        .chart-container { min-height: 300px; }
+
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .chart-container { filter: invert(1) hue-rotate(180deg); }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="/admin-panel" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="/admin-panel" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Panel
+                </a>
+            </li>
+            <li>
+                <a href="/admin/reports" class="nav-link">
+                    <i class="bi bi-bar-chart-line-fill"></i> Raporlar
+                </a>
+            </li>
+            <li>
+                <a href="/maintenance" class="nav-link active" aria-current="page">
+                    <i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+                    
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Analitik</h1>
+        </div>
+                    
+        <div class="row">
+            <!-- Monthly Registrations -->
+            <div class="col-lg-7 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">Aylık Kullanıcı Kayıtları (Son 6 Ay)</div>
+                    <div class="card-body">
+                        <canvas id="monthlyRegistrationsChart"></canvas>
+                    </div>
+                </div>
+                        </div>
+            <!-- User Role Distribution -->
+            <div class="col-lg-5 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">Kullanıcı Rol Dağılımı</div>
+                    <div class="card-body">
+                        <canvas id="userRoleDistributionChart"></canvas>
+                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+        <div class="row">
+            <!-- Popular Products -->
+            <div class="col-lg-7 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">En Popüler 10 Ürün</div>
+                    <div class="card-body">
+                         <canvas id="popularProductsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Stock Distribution -->
+            <div class="col-lg-5 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">Stok Durumu Dağılımı</div>
+                    <div class="card-body">
+                        <canvas id="stockDistributionChart"></canvas>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        let monthlyRegistrationsChart, userRoleDistributionChart, popularProductsChart, stockDistributionChart;
+
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch('/api/maintenance/analytics-data');
+                if (!response.ok) throw new Error('Analitik verileri alınamadı.');
+                const data = await response.json();
+                
+                renderMonthlyRegistrations(data.monthly_registrations.reverse());
+                renderUserRoleDistribution(data.user_role_distribution);
+                renderPopularProducts(data.popular_products);
+                renderStockDistribution(data.stock_distribution);
+                
+            } catch (error) {
+                console.error("Analitik verileri çekilirken hata:", error);
+            }
+        }
+
+        function renderMonthlyRegistrations(registrationData) {
+            const ctx = document.getElementById('monthlyRegistrationsChart').getContext('2d');
+            if(monthlyRegistrationsChart) monthlyRegistrationsChart.destroy();
+            monthlyRegistrationsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: registrationData.map(d => d.month),
+                    datasets: [{
+                        label: 'Yeni Kullanıcılar',
+                        data: registrationData.map(d => d.count),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+        
+        function renderUserRoleDistribution(roleData) {
+            const ctx = document.getElementById('userRoleDistributionChart').getContext('2d');
+            if(userRoleDistributionChart) userRoleDistributionChart.destroy();
+            userRoleDistributionChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(roleData),
+                    datasets: [{
+                        data: Object.values(roleData),
+                        backgroundColor: ['#0d6efd', '#6c757d'],
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        function renderPopularProducts(productData) {
+            const ctx = document.getElementById('popularProductsChart').getContext('2d');
+            if(popularProductsChart) popularProductsChart.destroy();
+            popularProductsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: productData.map(p => p.name),
+                    datasets: [{
+                        label: 'Bulunma Sayısı',
+                        data: productData.map(p => p.count),
+                        backgroundColor: '#198754'
+                    }]
+                },
+                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderStockDistribution(stockData) {
+            const ctx = document.getElementById('stockDistributionChart').getContext('2d');
+            const statusColors = { 'Stok Yok': '#dc3545', 'Kritik': '#ffc107', 'Az': '#0dcaf0', 'Yeterli': '#198754' };
+            if(stockDistributionChart) stockDistributionChart.destroy();
+            stockDistributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: stockData.map(s => s.status),
+                    datasets: [{
+                        data: stockData.map(s => s.count),
+                        backgroundColor: stockData.map(s => statusColors[s.status] || '#6c757d'),
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        fetchAnalytics();
+    });
+    </script>
+</body>
+</html>

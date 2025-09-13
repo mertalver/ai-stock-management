@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Stok Yönetim Sistemi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👨‍💼 Admin Paneli</h1>
+            <p>Stok Tablosu - Kritik seviyedeki ürünler kırmızı ile vurgulanmıştır</p>
+        </header>
+
+        <main class="admin-container">
+            <div class="controls">
+                <button onclick="window.location.href='/'" class="back-btn">
+                    ← Ana Sayfaya Dön
+                </button>
+                <div class="legend">
+                    <span class="legend-item">
+                        <span class="legend-color normal"></span>
+                        Normal Stok
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-color critical"></span>
+                        Kritik Stok
+                    </span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Veriler yükleniyor...</p>
+                </div>
+                
+                <table id="productsTable" class="products-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ürün Adı</th>
+                            <th>Stok Miktarı</th>
+                            <th>Kritik Seviye</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Veriler JavaScript ile yüklenecek -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="error" class="error" style="display: none;">
+                <h3>❌ Hata</h3>
+                <p id="errorMessage"></p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Stok Yönetim Sistemi</p>
+        </footer>
+    </div>
+
+    <script>
+        // Admin paneli için veri yükleme
+        async function loadAdminData() {
+            try {
+                const response = await fetch('/api/products');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                populateTable(data);
+                
+            } catch (error) {
+                showError('Veri yüklenirken bir hata oluştu: ' + error.message);
+            }
+        }
+
+        function populateTable(products) {
+            const tableBody = document.getElementById('tableBody');
+            const table = document.getElementById('productsTable');
+            const loading = document.getElementById('loading');
+            
+            tableBody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = product.is_critical ? 'critical-row' : '';
+                
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td>${product.is_critical ? '🔴 ' : ''}${product.name}</td>
+                    <td>${product.stock}</td>
+                    <td>${product.critical_level}</td>
+                    <td>
+                        <span class="status ${product.is_critical ? 'critical' : 'normal'}">
+                            ${product.is_critical ? 'KRİTİK' : 'NORMAL'}
+                        </span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+
+            loading.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        function showError(message) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            loading.style.display = 'none';
+            errorMessage.textContent = message;
+            error.style.display = 'block';
+        }
+
+        // Sayfa yüklendiğinde verileri getir
+        document.addEventListener('DOMContentLoaded', loadAdminData);
+    </script>
+</body>
+</html> 

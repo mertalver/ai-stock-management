@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakım Paneli - Veri Yönetimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .list-group-item { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="/admin-panel" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="/admin-panel" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Panel
+                </a>
+            </li>
+            <li>
+                <a href="/admin/reports" class="nav-link">
+                    <i class="bi bi-bar-chart-line-fill"></i> Raporlar
+                </a>
+            </li>
+            <li>
+                <a href="/maintenance" class="nav-link active" aria-current="page">
+                    <i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Veri Yönetimi</h1>
+        </div>
+
+        <div class="row">
+            <!-- Backup Management -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-database-down me-2"></i>Veritabanı Yedekleme</h5>
+                        <button class="btn btn-primary btn-sm" id="createBackupBtn">
+                            <i class="bi bi-plus-circle me-1"></i> Yeni Yedek Oluştur
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p>Mevcut veritabanının bir yedeğini oluşturun. Yedekler 'backups' klasöründe saklanır.</p>
+                        <h6>Mevcut Yedekler:</h6>
+                        <ul class="list-group" id="backupList">
+                            <!-- Yedekler buraya yüklenecek -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Cleanup -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-trash3 me-2"></i>Veri Temizleme</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Sistem performansını artırmak için eski veya gereksiz verileri temizleyin.</p>
+                        <div class="alert alert-warning">
+                            <strong>Dikkat:</strong> Bu işlem geri alınamaz.
+                        </div>
+                        <button class="btn btn-danger" id="clearDataBtn">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> 30 Günden Eski Verileri Temizle
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toastContainer = document.querySelector('.toast-container');
+        const backupList = document.getElementById('backupList');
+        const createBackupBtn = document.getElementById('createBackupBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+
+        function showToast(message, type = 'info') {
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'error' ? 'bg-danger' : (type === 'success' ? 'bg-success' : 'bg-primary');
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+            toast.show();
+            toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+        }
+
+        async function fetchBackups() {
+            try {
+                const response = await fetch('/api/maintenance/backups');
+                if (!response.ok) throw new Error('Yedekler alınamadı.');
+                const backups = await response.json();
+                renderBackups(backups);
+            } catch (error) {
+                console.error('Yedekleri çekerken hata:', error);
+                showToast(error.message, 'error');
+                backupList.innerHTML = '<li class="list-group-item text-danger">Yedekler yüklenemedi.</li>';
+            }
+        }
+
+        function renderBackups(backups) {
+            backupList.innerHTML = '';
+            if (backups.length === 0) {
+                backupList.innerHTML = '<li class="list-group-item">Mevcut yedek bulunmuyor.</li>';
+                return;
+            }
+            backups.forEach(backup => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = backup;
+                backupList.appendChild(li);
+            });
+        }
+
+        createBackupBtn.addEventListener('click', async () => {
+            if (!confirm('Yeni bir veritabanı yedeği oluşturmak istediğinizden emin misiniz?')) return;
+            
+            createBackupBtn.disabled = true;
+            createBackupBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Oluşturuluyor...';
+
+            try {
+                const response = await fetch('/api/maintenance/backup', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message, 'success');
+                    fetchBackups(); // Refresh the list
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                createBackupBtn.disabled = false;
+                createBackupBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Yeni Yedek Oluştur';
+            }
+        });
+
+        clearDataBtn.addEventListener('click', async () => {
+            if (!confirm('30 günden eski ve stoğu sıfır olan ürün kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+
+            clearDataBtn.disabled = true;
+            clearDataBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Temizleniyor...';
+
+            try {
+                const response = await fetch('/api/maintenance/clear-old-data', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message, 'success');
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                clearDataBtn.disabled = false;
+                clearDataBtn.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> 30 Günden Eski Verileri Temizle';
+            }
+        });
+
+        // Initial fetch
+        fetchBackups();
+    });
+    </script>
+</body>
+</html>

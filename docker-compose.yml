@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - FLASK_ENV=production
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL}
+      - PRODUCTS_SERVICE_URL=${PRODUCTS_SERVICE_URL}
+      - ADMIN_SERVICE_URL=${ADMIN_SERVICE_URL}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_GATEWAY_SECRET_KEY=${API_GATEWAY_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./stok_db.sqlite:/app/stok_db.sqlite
+      - ./backups:/app/backups
+    depends_on:
+      - users-service
+      - products-service
+      - admin-service
+      - reports-service
+
+  users-service:
+    build:
+      context: .
+      dockerfile: users-service/Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL}
+      - PRODUCTS_SERVICE_URL=${PRODUCTS_SERVICE_URL}
+      - ADMIN_SERVICE_URL=${ADMIN_SERVICE_URL}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_GATEWAY_SECRET_KEY=${API_GATEWAY_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./stok_db.sqlite:/app/stok_db.sqlite
+
+  products-service:
+    build:
+      context: .
+      dockerfile: products-service/Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL}
+      - PRODUCTS_SERVICE_URL=${PRODUCTS_SERVICE_URL}
+      - ADMIN_SERVICE_URL=${ADMIN_SERVICE_URL}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_GATEWAY_SECRET_KEY=${API_GATEWAY_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./stok_db.sqlite:/app/stok_db.sqlite
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: admin-service/Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL}
+      - PRODUCTS_SERVICE_URL=${PRODUCTS_SERVICE_URL}
+      - ADMIN_SERVICE_URL=${ADMIN_SERVICE_URL}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_GATEWAY_SECRET_KEY=${API_GATEWAY_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./stok_db.sqlite:/app/stok_db.sqlite
+
+  reports-service:
+    build:
+      context: .
+      dockerfile: reports-service/Dockerfile
+    environment:
+      - FLASK_ENV=production
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL}
+      - PRODUCTS_SERVICE_URL=${PRODUCTS_SERVICE_URL}
+      - ADMIN_SERVICE_URL=${ADMIN_SERVICE_URL}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - API_GATEWAY_SECRET_KEY=${API_GATEWAY_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./stok_db.sqlite:/app/stok_db.sqlite
+
+volumes:
+  db_data:
+  backups_data:

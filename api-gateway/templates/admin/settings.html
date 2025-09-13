@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayarlar - Admin Paneli</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; transition: color .15s ease-in-out, background-color .15s ease-in-out; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] .main-content {
+            background-color: #1a1a1a !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary { color: #adb5bd; border-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary:hover { color: #fff; background-color: #495057; }
+        [data-bs-theme="dark"] .border-bottom { border-color: rgba(255, 255, 255, 0.125) !important; }
+
+        .stat-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-card i {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .toast-container {
+            z-index: 1080;
+        }
+        .quick-link-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s;
+            border: 0;
+        }
+        .quick-link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        .quick-link-card .card-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .quick-link-card .card-icon {
+            font-size: 2.5rem;
+            color: #0d6efd;
+            transition: color 0.2s;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-icon {
+            color: #3b8bfd;
+        }
+        .quick-link-card .card-text {
+            color: #6c757d;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-text { color: #adb5bd; }
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .card { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .chart-container { filter: invert(1) hue-rotate(180deg); }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="/admin-panel" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none admin-link">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('admin_panel') }}" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Panel
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_reports') }}" class="nav-link">
+                    <i class="bi bi-bar-chart-line-fill"></i> Raporlar
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('maintenance_dashboard') }}" class="nav-link">
+                    <i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item active" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Admin Ayarları</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Görünüm Ayarları</h5>
+                    </div>
+                    <div class="card-body">
+                         <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="darkModeSwitch">
+                            <label class="form-check-label" for="darkModeSwitch">Karanlık Mod</label>
+                        </div>
+                        <small class="text-muted">Admin panelinin arayüzünü açık veya koyu tema arasında değiştirin.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeSwitch = document.getElementById('darkModeSwitch');
+            const htmlElement = document.documentElement;
+
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    darkModeSwitch.checked = true;
+                } else {
+                    htmlElement.removeAttribute('data-bs-theme');
+                    darkModeSwitch.checked = false;
+                }
+            };
+            
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            darkModeSwitch.addEventListener('change', () => {
+                const newTheme = darkModeSwitch.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+    </script>
+</body>
+</html> 

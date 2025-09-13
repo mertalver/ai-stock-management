@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Paneli - Stok Yönetim Sistemi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👤 User Paneli</h1>
+            <p>Ürün Listesi - Sadece ürün adlarını görüntüleyebilirsiniz</p>
+        </header>
+
+        <main class="user-container">
+            <div class="controls">
+                <button onclick="window.location.href='/'" class="back-btn">
+                    ← Ana Sayfaya Dön
+                </button>
+                <div class="product-count">
+                    <span id="productCount">0</span> ürün bulundu
+                </div>
+            </div>
+
+            <div class="list-container">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Ürünler yükleniyor...</p>
+                </div>
+                
+                <div id="productsList" class="products-list" style="display: none;">
+                    <!-- Ürünler JavaScript ile yüklenecek -->
+                </div>
+            </div>
+
+            <div id="error" class="error" style="display: none;">
+                <h3>❌ Hata</h3>
+                <p id="errorMessage"></p>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Stok Yönetim Sistemi</p>
+        </footer>
+    </div>
+
+    <script>
+        // User paneli için veri yükleme
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/products/names');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                populateList(data);
+                
+            } catch (error) {
+                showError('Veri yüklenirken bir hata oluştu: ' + error.message);
+            }
+        }
+
+        function populateList(products) {
+            const productsList = document.getElementById('productsList');
+            const loading = document.getElementById('loading');
+            const productCount = document.getElementById('productCount');
+            
+            productsList.innerHTML = '';
+            productCount.textContent = products.length;
+
+            products.forEach((product, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'product-item';
+                listItem.innerHTML = `
+                    <div class="product-number">${product.id}</div>
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-icon">📦</div>
+                `;
+                
+                // Animasyon için delay ekle
+                listItem.style.animationDelay = `${index * 50}ms`;
+                
+                productsList.appendChild(listItem);
+            });
+
+            loading.style.display = 'none';
+            productsList.style.display = 'block';
+        }
+
+        function showError(message) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            loading.style.display = 'none';
+            errorMessage.textContent = message;
+            error.style.display = 'block';
+        }
+
+        // Sayfa yüklendiğinde verileri getir
+        document.addEventListener('DOMContentLoaded', loadUserData);
+    </script>
+</body>
+</html> 

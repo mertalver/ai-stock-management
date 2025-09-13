@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakım Paneli - Kontrol Merkezi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; transition: color .15s ease-in-out, background-color .15s ease-in-out; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] .main-content {
+            background-color: #1a1a1a !important;
+            color: #dee2e6;
+        }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card {
+            background-color: #2b2f33;
+            color: #dee2e6;
+            border-color: rgba(255, 255, 255, 0.125);
+        }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary { color: #adb5bd; border-color: #495057; }
+        [data-bs-theme="dark"] .btn-outline-secondary:hover { color: #fff; background-color: #495057; }
+        [data-bs-theme="dark"] .border-bottom { border-color: rgba(255, 255, 255, 0.125) !important; }
+
+        .stat-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-card i {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        .toast-container {
+            z-index: 1080;
+        }
+        .quick-link-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            transition: transform .2s, box-shadow .2s;
+            border: 0;
+        }
+        .quick-link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        .quick-link-card .card-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .quick-link-card .card-icon {
+            font-size: 2.5rem;
+            color: #0d6efd;
+            transition: color 0.2s;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-icon {
+            color: #3b8bfd;
+        }
+        .quick-link-card .card-text {
+            color: #6c757d;
+        }
+        [data-bs-theme="dark"] .quick-link-card .card-text { color: #adb5bd; }
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .card { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .chart-container { filter: invert(1) hue-rotate(180deg); }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="/admin-panel" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="/admin-panel" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Panel
+                </a>
+            </li>
+            <li>
+                <a href="/admin/reports" class="nav-link">
+                    <i class="bi bi-bar-chart-line-fill"></i> Raporlar
+                </a>
+            </li>
+            <li>
+                <a href="/maintenance" class="nav-link active" aria-current="page">
+                    <i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+                    
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Bakım Paneli</h1>
+        </div>
+                    
+        <!-- System Stats -->
+        <h3 class="h5 mb-3">Sistem Genel Durumu</h3>
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body stat-card">
+                        <div>
+                            <h5 class="card-title" id="total-users">0</h5>
+                            <p class="card-text">Toplam Kullanıcı</p>
+                        </div>
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-success">
+                     <div class="card-body stat-card">
+                        <div>
+                            <h5 class="card-title" id="total-products">0</h5>
+                            <p class="card-text">Toplam Ürün</p>
+                        </div>
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-danger">
+                     <div class="card-body stat-card">
+                        <div>
+                            <h5 class="card-title" id="critical-products">0</h5>
+                            <p class="card-text">Kritik Seviye</p>
+                        </div>
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                                </div>
+                            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-info">
+                     <div class="card-body stat-card">
+                        <div>
+                            <h5 class="card-title" id="db-size">0 MB</h5>
+                            <p class="card-text">Veritabanı Boyutu</p>
+                        </div>
+                        <i class="bi bi-database"></i>
+                    </div>
+                </div>
+                        </div>
+                    </div>
+
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-md-8 mb-4">
+                <div class="card">
+                    <div class="card-header">En Aktif 5 Kullanıcı (Ürün Sayısına Göre)</div>
+                    <div class="card-body">
+                        <canvas id="topUsersChart"></canvas>
+                    </div>
+                        </div>
+                        </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">Kategori Dağılımı</div>
+                    <div class="card-body">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <h3 class="h5 mt-4 mb-3">Yönetim Araçları</h3>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <a href="/maintenance/data" class="card quick-link-card h-100">
+                    <div class="card-body">
+                        <i class="bi bi-server card-icon"></i>
+                        <h5 class="card-title">Veri Yönetimi</h5>
+                        <p class="card-text text-muted">Veritabanı yedekleme, eski kayıtları temizleme ve veri içe/dışa aktarma işlemleri.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                 <a href="/maintenance/analytics" class="card quick-link-card h-100">
+                    <div class="card-body">
+                        <i class="bi bi-pie-chart-fill card-icon"></i>
+                        <h5 class="card-title">Analitik</h5>
+                        <p class="card-text text-muted">Sistem kullanımı, kullanıcı ve ürün istatistikleri hakkında detaylı raporlar.</p>
+                    </div>
+                </a>
+            </div>
+             <div class="col-lg-4 col-md-6 mb-4">
+                <a href="/maintenance/logs" class="card quick-link-card h-100">
+                    <div class="card-body">
+                        <i class="bi bi-file-text-fill card-icon"></i>
+                        <h5 class="card-title">Log Görüntüleyici</h5>
+                        <p class="card-text text-muted">Sistem ve kullanıcı aktivite loglarını inceleyin, filtreleyin ve temizleyin.</p>
+                    </div>
+                </a>
+            </div>
+             <div class="col-lg-4 col-md-6 mb-4">
+                <a href="/maintenance/monitoring" class="card quick-link-card h-100">
+                    <div class="card-body">
+                        <i class="bi bi-activity card-icon"></i>
+                        <h5 class="card-title">Sistem İzleme</h5>
+                        <p class="card-text text-muted">CPU, bellek ve disk kullanımını gerçek zamanlı olarak takip edin.</p>
+                    </div>
+                </a>
+            </div>
+             <div class="col-lg-4 col-md-6 mb-4">
+                <a href="/maintenance/settings" class="card quick-link-card h-100">
+                    <div class="card-body">
+                        <i class="bi bi-sliders card-icon"></i>
+                        <h5 class="card-title">Sistem Ayarları</h5>
+                        <p class="card-text text-muted">Uygulamanın genel ayarlarını, bakım modunu ve diğer parametreleri yapılandırın.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let topUsersChart, categoryChart;
+
+            async function fetchStats() {
+                try {
+                    const response = await fetch('/api/maintenance/system-stats');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    
+                    document.getElementById('total-users').textContent = data.total_users;
+                    document.getElementById('total-products').textContent = data.total_products;
+                    document.getElementById('critical-products').textContent = data.critical_products;
+                    document.getElementById('db-size').textContent = (data.db_size_bytes / 1024 / 1024).toFixed(2) + ' MB';
+
+                    updateTopUsersChart(data.top_users);
+                    updateCategoryChart(data.categories);
+                } catch (error) {
+                    console.error('Error fetching system stats:', error);
+                }
+            }
+
+            function updateTopUsersChart(users) {
+                const ctx = document.getElementById('topUsersChart').getContext('2d');
+                if (topUsersChart) {
+                    topUsersChart.destroy();
+                }
+                topUsersChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: users.map(u => u.username),
+                        datasets: [{
+                            label: 'Ürün Sayısı',
+                            data: users.map(u => u.product_count),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            function updateCategoryChart(categories) {
+                const ctx = document.getElementById('categoryChart').getContext('2d');
+                if (categoryChart) {
+                    categoryChart.destroy();
+                }
+                categoryChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(categories),
+                        datasets: [{
+                            label: 'Dağılım',
+                            data: Object.values(categories),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(255, 205, 86, 0.7)'
+                            ],
+                            hoverOffset: 4
+                        }]
+                    },
+                     options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                        }
+                    }
+                });
+            }
+
+            fetchStats();
+        });
+    </script>
+</body>
+</html> 

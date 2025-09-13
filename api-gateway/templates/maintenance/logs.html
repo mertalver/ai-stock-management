@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakım Paneli - Log Kayıtları</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script>
+        // Flash of unstyled content (FOUC) önlemek için temayı anında uygula
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); background-color: #fff; }
+        .nav-link { color: #212529; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { color: #000; }
+        .sidebar .me-md-auto, .sidebar .dropdown-toggle { color: #212529; }
+        .nav-link .bi { margin-right: 8px; }
+        .main-content { margin-left: 280px; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        
+        [data-bs-theme="dark"] body { background-color: #1a1a1a; color: #dee2e6; }
+        [data-bs-theme="dark"] .main-content { background-color: #1a1a1a; }
+        [data-bs-theme="dark"] .sidebar { background-color: #212529; color: #fff; }
+        [data-bs-theme="dark"] .nav-link { color: #adb5bd; }
+        [data-bs-theme="dark"] .nav-link:hover, [data-bs-theme="dark"] .nav-link.active { color: #fff; }
+        [data-bs-theme="dark"] .sidebar .me-md-auto, [data-bs-theme="dark"] .sidebar .dropdown-toggle { color: #fff; }
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .list-group-item { background-color: #2b2f33; color: #dee2e6; border-color: rgba(255, 255, 255, 0.125); }
+        [data-bs-theme="dark"] .dropdown-menu { background-color: #343a40; border-color: rgba(255, 255, 255, 0.15); }
+        [data-bs-theme="dark"] .dropdown-item { color: #dee2e6; }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus { background-color: #495057; }
+        [data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+        [data-bs-theme="dark"] .table { color: #dee2e6; border-color: #495057; }
+        [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * { color: #fff; background-color: #343a40; }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select { background-color: #343a40; color: #fff; border-color: #495057; }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus { background-color: #343a40; color: #fff; border-color: #86b7fe; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
+        [data-bs-theme="dark"] .page-link { background-color: #343a40; border-color: #495057; color: #dee2e6; }
+        [data-bs-theme="dark"] .page-item.disabled .page-link { background-color: #2b2f33; border-color: #495057; color: #6c757d; }
+        [data-bs-theme="dark"] .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; }
+        [data-bs-theme="dark"] .nav-tabs .nav-link { color: #adb5bd; border-color: #495057; }
+        [data-bs-theme="dark"] .nav-tabs .nav-link.active { color: #fff; background-color: #0d6efd; border-color: #0d6efd;}
+        .toast-container {
+            z-index: 1080;
+        }
+        .log-level-INFO { background-color: rgba(0, 123, 255, 0.1); }
+        .log-level-WARNING { background-color: rgba(255, 193, 7, 0.1); }
+        .log-level-ERROR { background-color: rgba(220, 53, 69, 0.1); }
+        .log-level-CRITICAL { background-color: rgba(108, 117, 125, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 280px;">
+        <a href="/admin-panel" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <i class="bi bi-shield-lock-fill me-2" style="font-size: 2rem;"></i>
+            <span class="fs-4">Admin Kontrol</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="/admin-panel" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Panel
+                </a>
+            </li>
+            <li>
+                <a href="/admin/reports" class="nav-link">
+                    <i class="bi bi-bar-chart-line-fill"></i> Raporlar
+                </a>
+            </li>
+            <li>
+                <a href="/maintenance" class="nav-link active" aria-current="page">
+                    <i class="bi bi-wrench-adjustable-circle-fill"></i> Bakım
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle me-2" style="font-size: 2rem;"></i>
+                <strong>{{ session.get('admin_username', 'Admin') }}</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin_settings') }}">Ayarlar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="/logout">Çıkış Yap</a></li>
+            </ul>
+        </div>
+    </div>
+                
+    <main class="main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Log Kayıtları</h1>
+        </div>
+                
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="logTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="activity-log-tab" data-bs-toggle="tab" data-bs-target="#activity-log" type="button" role="tab" aria-controls="activity-log" aria-selected="true">Aktivite Logları</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="system-log-tab" data-bs-toggle="tab" data-bs-target="#system-log" type="button" role="tab" aria-controls="system-log" aria-selected="false">Kritik Sistem Logları</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="logTabsContent">
+                    <!-- Activity Logs Tab -->
+                    <div class="tab-pane fade show active" id="activity-log" role="tabpanel" aria-labelledby="activity-log-tab">
+                        <form class="row g-3 mb-3" id="activityFilterForm">
+                            <div class="col-md-4"><input type="text" class="form-control" id="activitySearch" placeholder="Aksiyon veya açıklamada ara..."></div>
+                            <div class="col-md-3">
+                                <select id="activityLevel" class="form-select">
+                                    <option value="">Tüm Seviyeler</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                            <div class="col-auto"><button type="submit" class="btn btn-primary">Filtrele</button></div>
+                            <div class="col-auto"><button type="button" class="btn btn-danger" id="clearActivityLogs">Logları Temizle</button></div>
+                        </form>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead><tr><th>ID</th><th>Zaman</th><th>Seviye</th><th>Aktör</th><th>Aksiyon</th><th>Açıklama</th><th>IP Adresi</th></tr></thead>
+                                <tbody id="activityLogBody"></tbody>
+                            </table>
+                        </div>
+                        <nav><ul class="pagination" id="activityPagination"></ul></nav>
+                            </div>
+                            
+                    <!-- System Logs Tab -->
+                    <div class="tab-pane fade" id="system-log" role="tabpanel" aria-labelledby="system-log-tab">
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Bu bölümde sadece uygulamanın çalışması sırasında meydana gelen kritik olaylar ve hatalar listelenir.
+                        </div>
+                         <form class="row g-3 mb-3" id="systemFilterForm">
+                            <div class="col-md-3">
+                                <select id="systemLevel" class="form-select">
+                                    <option value="">Tüm Seviyeler</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                    <option value="CRITICAL">CRITICAL</option>
+                                </select>
+                            </div>
+                            <div class="col-auto"><button type="submit" class="btn btn-primary">Filtrele</button></div>
+                             <div class="col-auto"><button type="button" class="btn btn-danger" id="clearSystemLogs">Logları Temizle</button></div>
+                        </form>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead><tr><th>ID</th><th>Zaman</th><th>Seviye</th><th>Modül</th><th>Fonksiyon</th><th>Mesaj</th></tr></thead>
+                                <tbody id="systemLogBody"></tbody>
+                            </table>
+                        </div>
+                        <nav><ul class="pagination" id="systemPagination"></ul></nav>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const toastContainer = document.querySelector('.toast-container');
+
+        function showToast(message, type = 'info') {
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'error' ? 'bg-danger' : (type === 'success' ? 'bg-success' : 'bg-primary');
+            const toastHTML = `<div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>`;
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            new bootstrap.Toast(toastElement, { delay: 5000 }).show();
+            toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+        }
+
+        const logTabs = new bootstrap.Tab(document.getElementById('activity-log-tab'));
+
+        const activity = {
+            body: document.getElementById('activityLogBody'),
+            pagination: document.getElementById('activityPagination'),
+            form: document.getElementById('activityFilterForm'),
+            clearBtn: document.getElementById('clearActivityLogs'),
+            fetch: (page = 1) => fetchLogs('activity', page)
+        };
+        
+        const system = {
+            body: document.getElementById('systemLogBody'),
+            pagination: document.getElementById('systemPagination'),
+            form: document.getElementById('systemFilterForm'),
+            clearBtn: document.getElementById('clearSystemLogs'),
+            fetch: (page = 1) => fetchLogs('system', page)
+        };
+
+        async function fetchLogs(type, page = 1) {
+            const logType = type === 'activity' ? activity : system;
+            const tableBody = logType.body;
+            const paginationUl = logType.pagination;
+            let url = `/api/maintenance/${type}-logs?page=${page}`;
+
+            if (type === 'activity') {
+                const search = document.getElementById('activitySearch').value;
+                const level = document.getElementById('activityLevel').value;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                if (level) url += `&level=${level}`;
+            } else {
+                const level = document.getElementById('systemLevel').value;
+                if (level) url += `&level=${level}`;
+            }
+            
+            tableBody.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner-border spinner-border-sm"></div> Yükleniyor...</td></tr>`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Loglar alınamadı.');
+                const data = await response.json();
+                
+                tableBody.innerHTML = '';
+                if (data.logs.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center">Gösterilecek log bulunamadı.</td></tr>`;
+                } else {
+                    data.logs.forEach(log => {
+                        const row = document.createElement('tr');
+                        row.className = `log-level-${log.level}`;
+                        if (type === 'activity') {
+                             row.innerHTML = `
+                                <td>${log.id}</td>
+                                <td>${new Date(log.timestamp).toLocaleString()}</td>
+                                <td><span class="badge bg-${log.level === 'INFO' ? 'primary' : log.level === 'WARNING' ? 'warning' : 'danger'}">${log.level}</span></td>
+                                <td>${log.user_name || log.admin_name || 'System'}</td>
+                                <td>${log.action}</td>
+                                <td>${log.description || ''}</td>
+                                <td>${log.ip_address || ''}</td>
+                            `;
+                } else {
+                    row.innerHTML = `
+                                <td>${log.id}</td>
+                                <td>${new Date(log.timestamp).toLocaleString()}</td>
+                                <td><span class="badge bg-${log.level === 'CRITICAL' ? 'dark' : log.level === 'ERROR' ? 'danger' : log.level === 'WARNING' ? 'warning' : 'info'}">${log.level}</span></td>
+                                <td>${log.module || ''}</td>
+                                <td>${log.function_name || ''}</td>
+                                <td>${log.message}</td>
+                            `;
+                        }
+                tableBody.appendChild(row);
+            });
+        }
+                renderPagination(paginationUl, data.page, data.pages, type);
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Loglar yüklenemedi: ${error.message}</td></tr>`;
+            }
+        }
+
+        function renderPagination(ulElement, currentPage, totalPages, type) {
+            ulElement.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const createPageItem = (page, text, isActive = false, isDisabled = false) => {
+                const li = document.createElement('li');
+                li.className = `page-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" data-page="${page}">${text}</a>`;
+                return li;
+            };
+
+            ulElement.appendChild(createPageItem(currentPage - 1, 'Önceki', false, currentPage === 1));
+
+            // Pagination logic with ellipsis
+            let startPage, endPage;
+            if (totalPages <= 5) {
+                startPage = 1;
+                endPage = totalPages;
+            } else {
+                if (currentPage <= 3) {
+                    startPage = 1;
+                    endPage = 5;
+                } else if (currentPage + 2 >= totalPages) {
+                    startPage = totalPages - 4;
+                    endPage = totalPages;
+                } else {
+                    startPage = currentPage - 2;
+                    endPage = currentPage + 2;
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                ulElement.appendChild(createPageItem(i, i, i === currentPage));
+            }
+
+            if (currentPage < totalPages) {
+                ulElement.appendChild(createPageItem(currentPage + 1, 'Sonraki'));
+            }
+            
+            ulElement.onclick = e => {
+                e.preventDefault();
+                const page = e.target.dataset.page;
+                if (page) fetchLogs(type, parseInt(page));
+            };
+        }
+        
+        activity.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            activity.fetch(1);
+        });
+        
+        system.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            system.fetch(1);
+        });
+
+        async function clearLogs(type) {
+            if (!confirm(`${type === 'activity' ? 'Aktivite' : 'Sistem'} loglarını temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) return;
+
+            try {
+                const response = await fetch('/api/maintenance/clear-logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, days: 30 }) // Örnek: 30 günden eskiyi siler
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message, 'success');
+                    fetchLogs(type, 1); // Listeyi yenile
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(`Loglar temizlenemedi: ${error.message}`, 'error');
+            }
+        }
+
+        activity.clearBtn.addEventListener('click', () => clearLogs('activity'));
+        system.clearBtn.addEventListener('click', () => clearLogs('system'));
+
+        // Sekme değiştirildiğinde logları yükle
+        document.getElementById('system-log-tab').addEventListener('show.bs.tab', () => system.fetch(1));
+        document.getElementById('activity-log-tab').addEventListener('show.bs.tab', () => activity.fetch(1));
+
+        // Initial Load
+        activity.fetch(1);
+    });
+    </script>
+</body>
+</html> 
